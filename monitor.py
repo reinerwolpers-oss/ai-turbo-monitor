@@ -28,7 +28,42 @@ def send(title, message, priority="default"):
     )
     response.raise_for_status()
 
+def test_api_failure():
+    """API-Fehler und Entwarnung isoliert testen."""
+    import tempfile
 
+    with tempfile.TemporaryDirectory() as tmp:
+        state_file = pathlib.Path(tmp) / "test_alert_state.json"
+
+        previous = {}
+        next_state = {}
+
+        print("TEST 1: Simulierter API-Ausfall")
+        errors = ["TEST-NVDA: Simulierter API-Ausfall"]
+
+        notify_data_errors(errors, previous, next_state)
+        state_file.write_text(
+            json.dumps(next_state), encoding="utf-8"
+        )
+        print("API_TEST_WARNING_OK")
+
+        print("TEST 2: Keine doppelte Warnung")
+        previous = json.loads(
+            state_file.read_text(encoding="utf-8")
+        )
+        next_state = dict(previous)
+
+        notify_data_errors(errors, previous, next_state)
+        print("API_TEST_DEDUP_OK")
+
+        print("TEST 3: API wiederhergestellt")
+        previous = json.loads(
+            state_file.read_text(encoding="utf-8")
+        )
+        next_state = dict(previous)
+
+        notify_data_errors([], previous, next_state)
+        print("API_TEST_RECOVERY_OK")
 def notify_data_errors(errors, previous, next_state):
     """Warnung bei neuen API-Fehlern, Entwarnung nach Behebung."""
     old_errors = set(previous.get("_api_errors", []))
@@ -221,8 +256,11 @@ def main():
 
 
 
+
 if __name__ == "__main__":
-    if os.getenv("TEST_NTFY") == "1":
+    if os.getenv("TEST_API_FAILURE") == "1":
+        test_api_failure()
+    elif os.getenv("TEST_NTFY") == "1":
         send(
             "AI Turbo Monitor 1.3 TEST",
             "Dies ist eine Testnachricht. "
@@ -232,4 +270,5 @@ if __name__ == "__main__":
         print("NTFY_TEST_OK")
     else:
         main()
+
   
