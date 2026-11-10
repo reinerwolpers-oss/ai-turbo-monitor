@@ -10,11 +10,13 @@ on:
         required: true
         type: boolean
         default: false
-        test_api_failure:
-      description: 'API-Ausfall und Entwarnung testen'
-      required: true
-      type: boolean
-      default: false
+      test_api_failure:
+        description: 'API-Ausfall und Entwarnung testen'
+        required: true
+        type: boolean
+        default: false
+
+
   schedule:
     - cron: '*/15 * * * 1-5'
 
