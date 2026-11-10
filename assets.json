@@ -1,0 +1,32 @@
+{
+  "version": "1.1",
+  "assets": [
+    {
+      "id": "ttwo-turbo",
+      "name": "Take-Two Interactive Turbo Long",
+      "symbol": "TTWO",
+      "type": "turbo",
+      "isin": "DE000FB00U40",
+      "direction": "long",
+      "knockout_usd": 213.47,
+      "warning_pct": 7,
+      "critical_pct": 3,
+      "enabled": true,
+      "knockout_note": "Screenshot-Wert, vor Livebetrieb beim Emittenten prüfen"
+    },
+    {
+      "id": "nvda-stock",
+      "name": "NVIDIA",
+      "symbol": "NVDA",
+      "type": "stock",
+      "enabled": true
+    },
+    {
+      "id": "googl-stock",
+      "name": "Alphabet",
+      "symbol": "GOOGL",
+      "type": "stock",
+      "enabled": true
+    }
+  ]
+}
