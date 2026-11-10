@@ -1,0 +1,14 @@
+{
+  "ttwo-turbo": {
+    "zone": "warning",
+    "cross_candle": null
+  },
+  "nvda-stock": {
+    "zone": "normal",
+    "cross_candle": null
+  },
+  "googl-stock": {
+    "zone": "normal",
+    "cross_candle": null
+  }
+}

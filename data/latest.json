@@ -1,8 +1,9 @@
 {
+  "id": "ttwo-turbo",
+  "name": "Take-Two Interactive Turbo Long",
   "symbol": "TTWO",
+  "type": "turbo",
   "price": 224.66,
-  "knockout": 213.47,
-  "distance_pct": 4.981,
   "ema9": 224.3943,
   "ema21": 223.9043,
   "rsi": 57.81,
@@ -72,5 +73,12 @@
     225.435,
     224.62,
     224.66
-  ]
+  ],
+  "isin": "DE000FB00U40",
+  "knockout": 213.47,
+  "distance_pct": 4.981,
+  "zone": "warning",
+  "warning_pct": 7.0,
+  "critical_pct": 3.0,
+  "knockout_note": "Screenshot-Wert, vor Livebetrieb beim Emittenten prüfen"
 }
