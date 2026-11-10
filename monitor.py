@@ -114,6 +114,30 @@ def analyze(asset):
     if df.empty:
         raise RuntimeError("Keine Kursdaten")
     closes = df["Close"].dropna().astype(float)
+    
+    # Schutz vor veralteten Kursdaten
+    if closes.empty:
+        raise RuntimeError("Keine gültigen Schlusskurse")
+
+    last_candle = pd.Timestamp(closes.index[-1])
+
+    if last_candle.tzinfo is None:
+        raise RuntimeError("Kursdaten ohne Zeitzone")
+
+    now = pd.Timestamp.now(tz="UTC")
+    candle_time = last_candle.tz_convert("UTC")
+    age_minutes = (now - candle_time).total_seconds() / 60
+
+    if age_minutes < -2:
+        raise RuntimeError("Kursdaten liegen in der Zukunft")
+
+    if age_minutes > 20:
+        raise RuntimeError(
+            f"Veraltete Kursdaten: {age_minutes:.1f} Minuten"
+        )
+
+    print(f"DATA_FRESH: {symbol} | Alter {age_minutes:.1f} Minuten")
+
     if len(closes) < 30:
         raise RuntimeError("Zu wenige 5-Minuten-Kerzen")
     e9 = closes.ewm(span=9, adjust=False).mean()
