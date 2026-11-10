@@ -10,6 +10,11 @@ on:
         required: true
         type: boolean
         default: false
+        test_api_failure:
+      description: 'API-Ausfall und Entwarnung testen'
+      required: true
+      type: boolean
+      default: false
   schedule:
     - cron: '*/15 * * * 1-5'
 
@@ -45,6 +50,7 @@ jobs:
           WARN_PCT: ${{ vars.WARN_PCT }}
           CRITICAL_PCT: ${{ vars.CRITICAL_PCT }}
           TEST_NTFY: ${{ inputs.test_ntfy && '1' || '0' }}
+          TEST_API_FAILURE: ${{ inputs.test_api_failure && '1' || '0' }}
         run: python monitor.py
 
       - name: Kursdaten speichern
