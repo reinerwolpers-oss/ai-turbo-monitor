@@ -99,6 +99,19 @@ def rsi_zone(rsi):
 
 
 def main():
+    
+    if os.getenv("TEST_NTFY", "0") == "1":
+        if not os.getenv("NTFY_TOPIC", "").strip():
+            raise RuntimeError("NTFY_TOPIC fehlt: Testnachricht nicht gesendet")
+
+        send(
+            "AI Turbo Monitor Test",
+            "Test erfolgreich: GitHub Actions kann ntfy-Nachrichten versenden.",
+            "default"
+        )
+        print("ntfy-Testnachricht erfolgreich versendet")
+        return
+
     assets = json.loads(CONFIG.read_text(encoding="utf-8"))["assets"]
     if not assets:
         raise ValueError("Keine Wertpapiere konfiguriert")
