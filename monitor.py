@@ -29,6 +29,31 @@ def send(title, message, priority="default"):
     response.raise_for_status()
 
 
+def notify_data_errors(errors, previous, next_state):
+    """Warnung bei neuen API-Fehlern, Entwarnung nach Behebung."""
+    old_errors = set(previous.get("_api_errors", []))
+    current_errors = set(errors)
+
+    new_errors = current_errors - old_errors
+
+    if new_errors:
+        send(
+            "AI Turbo Monitor: API-Fehler",
+            "Kursdaten konnten nicht geladen werden:\n"
+            + "\n".join(sorted(new_errors)),
+            "high"
+        )
+
+    if old_errors and not current_errors:
+        send(
+            "AI Turbo Monitor: Entwarnung",
+            "Alle zuvor gemeldeten Kursdatenfehler sind behoben.",
+            "default"
+        )
+
+    next_state["_api_errors"] = sorted(current_errors)
+
+
 def analyze(asset):
     symbol = asset["symbol"]
     df = yf.Ticker(symbol).history(period="5d", interval="5m", auto_adjust=True, prepost=False)
@@ -174,8 +199,18 @@ def main():
         except Exception as exc:
             errors.append(f"{key}: {exc}")
             print(f"ERROR {key}: {exc}")
+    
+    notify_data_errors(errors, previous, next_state)
+
     if not results:
-        raise RuntimeError("Keine gültigen Kursdaten: " + "; ".join(errors))
+        STATE.write_text(
+            json.dumps(next_state, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8"
+        )
+        raise RuntimeError(
+            "Keine gültigen Kursdaten: " + "; ".join(errors)
+        )
+
     MULTI.write_text(json.dumps({"version": "1.3", "assets": results, "errors": errors}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     ttwo = next((r for r in results if r["id"] == "ttwo-turbo"), None)
     if ttwo:
