@@ -13,6 +13,23 @@ STATE = DATA_DIR / "alert_state_v11.json"  # Preserve existing alert history
 CONFIG = ROOT / "assets.json"
 
 
+def market_is_open():
+    """Prüft NYSE-Handelszeiten und Feiertage."""
+    calendar = xcals.get_calendar("XNYS")
+    now = pd.Timestamp(datetime.now(timezone.utc))
+    current_minute = now.floor("min")
+
+    is_open = bool(
+        calendar.is_open_on_minute(current_minute)
+    )
+
+    if is_open:
+        print("MARKET_OPEN: NYSE ist geöffnet")
+    else:
+        print("MARKET_CLOSED: NYSE ist geschlossen")
+
+    return is_open
+
 def send(title, message, priority="default"):
     topic = os.getenv("NTFY_TOPIC", "").strip()
     if not topic:
@@ -159,6 +176,10 @@ def rsi_zone(rsi):
 
 
 def main():
+
+    if not market_is_open():
+        print("Keine Live-Analyse außerhalb der NYSE-Handelszeiten.")
+        return
     
     if os.getenv("TEST_NTFY", "0") == "1":
         if not os.getenv("NTFY_TOPIC", "").strip():
