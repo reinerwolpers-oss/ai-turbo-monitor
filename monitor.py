@@ -172,5 +172,16 @@ def main():
         raise RuntimeError("Teilweise fehlgeschlagen: " + "; ".join(errors))
 
 
+
 if __name__ == "__main__":
-    main()
+    if os.getenv("TEST_NTFY") == "1":
+        send(
+            "AI Turbo Monitor 1.3 TEST",
+            "Dies ist eine Testnachricht. "
+            "Keine echte Kauf- oder Verkaufsempfehlung.",
+            "default"
+        )
+        print("NTFY_TEST_OK")
+    else:
+        main()
+  
