@@ -1,8 +1,15 @@
 
 name: AI Turbo Monitor
 
+
 on:
   workflow_dispatch:
+    inputs:
+      test_ntfy:
+        description: 'Nur ntfy-Testnachricht senden'
+        required: true
+        type: boolean
+        default: false
   schedule:
     - cron: '*/15 * * * 1-5'
 
@@ -37,6 +44,7 @@ jobs:
           KNOCKOUT_USD: ${{ vars.KNOCKOUT_USD }}
           WARN_PCT: ${{ vars.WARN_PCT }}
           CRITICAL_PCT: ${{ vars.CRITICAL_PCT }}
+          TEST_NTFY: ${{ inputs.test_ntfy && '1' || '0' }}
         run: python monitor.py
 
       - name: Kursdaten speichern
