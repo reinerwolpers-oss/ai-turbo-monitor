@@ -1,6 +1,6 @@
 {
   "ttwo-turbo": {
-    "zone": "warning",
+    "zone": "normal",
     "cross_candle": null,
     "rsi_zone": "normal"
   },
@@ -11,7 +11,7 @@
   },
   "googl-stock": {
     "zone": "normal",
-    "cross_candle": null,
+    "cross_candle": "2026-11-11T15:05:00-05:00",
     "rsi_zone": "normal"
   }
 }
