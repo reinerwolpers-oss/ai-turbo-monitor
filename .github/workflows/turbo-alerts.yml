@@ -1,0 +1,44 @@
+
+name: Take-Two Turbo Alerts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '5,35 13-22 * * 1-5'
+
+permissions:
+  contents: read
+
+jobs:
+  turbo-alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Abhaengigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Take-Two Turbo pruefen
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: https://ntfy.sh
+          TURBO_QUOTE_URL: ${{ secrets.TURBO_QUOTE_URL }}
+          TURBO_QUOTE_TOKEN: ${{ secrets.TURBO_QUOTE_TOKEN }}
+        run: python turbo_monitor.py
+
+      - name: Ergebnisse speichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: turbo-alert-${{ github.run_number }}
+          path: output/turbo_latest.json
+          if-no-files-found: ignore
+          retention-days: 7
