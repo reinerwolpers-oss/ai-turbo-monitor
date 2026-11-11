@@ -1,0 +1,45 @@
+
+name: AI Daily Trader signals
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Werktags 21:15 UTC, nach US-Boersenschluss
+    - cron: '15 21 * * 1-5'
+
+permissions:
+  contents: read
+
+jobs:
+  signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Abhaengigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Aktien analysieren
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: https://ntfy.sh
+          SYMBOLS: NVDA,AMD,MSFT,TSLA,AAPL,SPCX,TTWO
+          SEND_NO_SIGNALS: 'true'
+        run: python trader.py
+
+      - name: Ergebnisse speichern
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: signals-${{ github.run_number }}
+          path: output/latest.json
+          if-no-files-found: ignore
+          retention-days: 30
