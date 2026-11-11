@@ -122,6 +122,20 @@ def push(message):
 
 def run(now=None):
     now = now or datetime.now(timezone.utc)
+    
+    if os.getenv("TURBO_TEST_ALERT") == "true":
+        message = (
+            "TESTALARM - KEIN ECHTES HANDELSSIGNAL\n"
+            "Take-Two Turbo FB00U4\n"
+            "ISIN: DE000FB00U40\n"
+            "SIMULATION: Knock-out-Abstand unter 5 %\n"
+            "Dies ist nur ein technischer Push-Test.\n"
+            "Keine automatische Order."
+        )
+        push(message)
+        print("TESTALARM erfolgreich an ntfy gesendet")
+        return {"status": "TEST_ALERT_SENT"}
+
     result = {'time_utc': now.isoformat(), 'isin': ISIN, 'wkn': WKN, 'shares': POSITION, 'entry_eur': ENTRY_EUR,
               'target_bid_eur': TARGET_BID_EUR, 'reference_ko_usd': REFERENCE_KO_USD,
               'mode': 'ALERTS_ONLY_NO_ORDERS', 'alerts': [], 'errors': []}
