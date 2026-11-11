@@ -1,9 +1,17 @@
 
 name: Take-Two Turbo Alerts
 
+
 on:
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Simulierten ntfy-Testalarm senden'
+        required: false
+        type: boolean
+        default: false
   schedule:
+
     - cron: '5,35 13-22 * * 1-5'
 
 permissions:
@@ -28,6 +36,7 @@ jobs:
 
       - name: Take-Two Turbo pruefen
         env:
+          TURBO_TEST_ALERT: ${{ inputs.test_alert == true && 'true' || 'false' }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_SERVER: https://ntfy.sh
           TURBO_QUOTE_URL: ${{ secrets.TURBO_QUOTE_URL }}
