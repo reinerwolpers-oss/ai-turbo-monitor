@@ -3,10 +3,11 @@ import json
 import os
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-import requests
+
 import numpy as np
 import pandas as pd
 import pandas_market_calendars as mcal
+import requests
 import yfinance as yf
 
 SYMBOLS = [s.strip().upper() for s in os.getenv('SYMBOLS', 'NVDA,AMD,MSFT,TSLA,AAPL,SPCX,TTWO').split(',') if s.strip()]
@@ -15,20 +16,40 @@ NTFY_SERVER = os.getenv('NTFY_SERVER', 'https://ntfy.sh').rstrip('/')
 SEND_NO_SIGNALS = os.getenv('SEND_NO_SIGNALS', 'false').lower() == 'true'
 
 
-def trading_day_today():
+def completed_session_today():
     now = datetime.now(ZoneInfo('America/New_York'))
-    calendar = mcal.get_calendar('NYSE')
-    schedule = calendar.schedule(start_date=now.date(), end_date=now.date())
-    return not schedule.empty, now.strftime('%Y-%m-%d')
+    today = now.date()
+    schedule = mcal.get_calendar('NYSE').schedule(start_date=today, end_date=today)
+    if schedule.empty:
+        print(f'{today}: NYSE geschlossen, keine Analyse.')
+        return None
+    if now < schedule['market_close'].iloc[0]:
+        print(f'{today}: NYSE-Handelstag noch nicht abgeschlossen, keine Analyse.')
+        return None
+    return today
 
 
-def calculate(ticker):
+def calculate(ticker, session_date):
     data = yf.Ticker(ticker).history(period='6mo', interval='1d', auto_adjust=True)
-    if data.empty or len(data) < 60:
-        raise ValueError('Zu wenige historische Tageskurse')
-    close = data['Close'].astype(float)
-    if not np.isfinite(close.iloc[-1]):
-        raise ValueError('Ungültiger letzter Kurs')
+    if data.empty or 'Close' not in data:
+        raise ValueError('Keine historischen Schlusskurse verfügbar')
+
+    # Yahoo may include a row for a session after the one being scanned.
+    close = data.loc[data.index.date <= session_date, 'Close'].sort_index()
+    if close.empty:
+        raise ValueError(f'Keine Schlusskurse bis zum {session_date} verfügbar')
+    last_data_date = close.index[-1].date()
+    if last_data_date != session_date:
+        raise ValueError(f'Schlusskurs am {session_date} fehlt (letzte Zeile: {last_data_date})')
+
+    close = pd.to_numeric(close, errors='coerce')
+    close = close.where(np.isfinite(close) & (close > 0))
+    if pd.isna(close.iloc[-1]):
+        raise ValueError(f'Ungültiger Schlusskurs am {session_date}')
+    close = close.dropna()
+    if len(close) < 60:
+        raise ValueError(f'Zu wenige gültige Tageskurse: {len(close)} von mindestens 60')
+
     ma20 = close.rolling(20).mean().iloc[-1]
     ma50 = close.rolling(50).mean().iloc[-1]
     delta = close.diff()
@@ -44,7 +65,7 @@ def calculate(ticker):
         signal = 'WARNUNG: schwacher Trend / Ausstieg prüfen'
     else:
         signal = 'KEIN HANDELSSIGNAL'
-    return {'symbol': ticker, 'last_close_usd': round(last, 2), 'ma20_usd': round(float(ma20), 2), 'ma50_usd': round(float(ma50), 2), 'rsi14': round(rsi, 1), 'signal': signal, 'last_data_date': str(data.index[-1].date())}
+    return {'symbol': ticker, 'last_close_usd': round(last, 2), 'ma20_usd': round(float(ma20), 2), 'ma50_usd': round(float(ma50), 2), 'rsi14': round(rsi, 1), 'signal': signal, 'last_data_date': last_data_date.isoformat()}
 
 
 def send_push(message):
@@ -56,15 +77,15 @@ def send_push(message):
 
 
 def main():
-    is_open, date = trading_day_today()
-    if not is_open:
-        print(f'{date}: NYSE geschlossen, keine Analyse.')
+    session_date = completed_session_today()
+    if session_date is None:
         return
+    date = session_date.isoformat()
     results = []
     errors = []
     for symbol in SYMBOLS:
         try:
-            results.append(calculate(symbol))
+            results.append(calculate(symbol, session_date))
         except Exception as exc:
             errors.append(f'{symbol}: {exc}')
     output = {'date_new_york': date, 'mode': 'SIGNALS_ONLY_NO_REAL_ORDERS', 'results': results, 'errors': errors, 'generated_at_utc': datetime.now(timezone.utc).isoformat()}
