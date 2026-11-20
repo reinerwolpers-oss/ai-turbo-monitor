@@ -3,6 +3,12 @@ name: AI Daily Trader signals
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'trader.py'
+      - 'test_trader.py'
+      - 'requirements.txt'
+      - '.github/workflows/daily-trader.yml'
   schedule:
     # Werktags 21:15 UTC, nach US-Boersenschluss
     - cron: '15 21 * * 1-5'
@@ -27,7 +33,11 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: pip install -r requirements.txt
 
+      - name: Kursvalidierung testen
+        run: python -m unittest -v test_trader
+
       - name: Aktien analysieren
+        if: github.event_name != 'pull_request'
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_SERVER: https://ntfy.sh
@@ -37,7 +47,7 @@ jobs:
 
       - name: Ergebnisse speichern
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         with:
           name: signals-${{ github.run_number }}
           path: output/latest.json
