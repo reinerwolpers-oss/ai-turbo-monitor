@@ -36,6 +36,29 @@ jobs:
       - name: Kursvalidierung testen
         run: python -m unittest -v test_trader
 
+      - name: Kursabruf für den betroffenen Handelstag prüfen
+        if: github.event_name == 'pull_request'
+        run: |
+          python - <<'PY'
+          from datetime import date
+          from trader import SYMBOLS, calculate
+
+          session = date(2026, 11, 19)
+          failures = []
+          for symbol in SYMBOLS:
+              try:
+                  result = calculate(symbol, session)
+                  assert result['last_data_date'] == session.isoformat()
+              except Exception as exc:
+                  print(f'{symbol}: {exc}')
+                  failures.append(symbol)
+              else:
+                  print(f'{symbol}: gültiger Tageskurs für {session}')
+          print(f'{len(SYMBOLS) - len(failures)}/{len(SYMBOLS)} Symbole erfolgreich')
+          if failures:
+              raise SystemExit(1)
+          PY
+
       - name: Aktien analysieren
         if: github.event_name != 'pull_request'
         env:
